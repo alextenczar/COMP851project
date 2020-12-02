@@ -6,7 +6,8 @@ The first is a data integration which provides lists of users as potential leads
 * and otherwise all leads should be deposited into a text file. 
 
 ## The Plan:
-![](https://i.imgur.com/gsql6QH.png)1. The leads.csv will exist in an S3 bucket. The CSV's name will then be provided to the a message producer as an argument and read in with Boto.
+![](https://i.imgur.com/gsql6QH.png)
+1. The leads.csv will exist in an S3 bucket. The CSV's name will then be provided to the a message producer as an argument and read in with Boto.
 2. The RabbitMQ producer will declare a message channel with Pika and begin parsing through the CSV file's rows.
 3. Each Row will be mapped to a Python dictionary and sent as a message over the channel.
 4. A RabbitMQ consumer will declare a queue and be consuming any incoming messages.
