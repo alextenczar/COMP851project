@@ -19,9 +19,9 @@ Psycopg2 function along with the desired table name in order to insert the data.
 ## Installation:
 #### Dependencies: Conda & PostgreSQL
 1. Clone the Git repo
-2. Initialize your Conda environment off the .yml file: 
- ```conda env create -n leads_project -f environment.yml```
-3. Create a new PSQL db (I used project851):
+2. Initialize your Conda environment off the .yml file:\
+```conda env create -n leads_project -f environment.yml```
+3. Create a new PSQL db (I used project851):\
 ```postgres=# create database project851;```
 4. Change the database.ini file to suit your PSQL database's information:
 	``` 
@@ -29,20 +29,20 @@ Psycopg2 function along with the desired table name in order to insert the data.
 	database=project851
 	user=postgres
 	```
-5. Activate your Conda environment:
-``` $ conda activate leads_project ```
-6. Run init_db.py to create your database tables or reset data:
-```$ python3 init_db.py```
-7. Add the csv file to your S3 bucket:
-```aws s3 cp ./leads.csv s3://comp851-m1-f20/aat1006/project_leads/leads.csv ```
-8. Adjust the S3 bucket name in producer.py:
-```data = s3.get_object(Bucket='comp851-m1-f20', Key=file_name)```
-9. Start the consumer:
-``` $ python3 consumer.py ```
-10. Run the producer with your S3's csv as an argument:
-```  $ python3 producer.py aat1006/project_leads/leads.csv```
-11. Your database's two tables should now be populated with leads and a leads_dump.csv should reside in the directory:
-```
+5. Activate your Conda environment:\
+  ``` $ conda activate leads_project ```
+6. Run init_db.py to create your database tables or reset data:\
+  ```$ python3 init_db.py```
+7. Add the csv file to your S3 bucket:\
+  ```aws s3 cp ./leads.csv s3://comp851-m1-f20/aat1006/project_leads/leads.csv ```
+8. Adjust the S3 bucket name in producer.py:\
+  ```data = s3.get_object(Bucket='comp851-m1-f20', Key=file_name)```
+9. Start the consumer:\
+  ``` $ python3 consumer.py ```
+10. Run the producer with your S3's csv as an argument:\
+  ```  $ python3 producer.py aat1006/project_leads/leads.csv```
+11. Your database's two tables should now be populated with leads and a leads_dump.csv should reside in the directory:\
+  ```
 project851=# select * from leads;
 ....
 3535101196800233 | United States | 1968-07-17 | 80552.84 | Assistant Manager |  
@@ -68,3 +68,20 @@ registration_dttm,id,first_name,last_name,email,gender,ip_address,cc,country,bir
 ....
 326 rows
 ```
+## Resources
+RabbitMQ/Pika:\
+https://www.rabbitmq.com/tutorials/tutorial-one-python.html \
+Converting Python Dictionary to JSON and Sending w/ RabbitMQ: \
+https://stackoverflow.com/questions/34534178/rabbitmq-how-to-send-python-dictionary-between-python-producer-and-consumer \
+Setting up PSQL:\
+https://www.postgresqltutorial.com/install-postgresql-linux/ \
+Inserting Python Variables into PSQL with Psycopg2:\
+https://stackoverflow.com/questions/62764057/how-to-insert-variable-data-into-postgresql \
+Dropping PSQL Tables with Psycopg2:
+https://stackoverflow.com/questions/435424/postgresql-how-to-create-table-only-if-it-does-not-already-exist
+Reading CSV File from S3 Bucket:\
+https://dev.to/shihanng/how-to-read-csv-file-from-amazon-s3-in-python-4ee9 \
+Creating CSV Dump:\
+https://stackoverflow.com/questions/2363731/append-new-row-to-old-csv-file-python \
+Writing CSV Header to CSV Dump:\
+https://stackoverflow.com/questions/28325622/python-csv-writing-headers-only-once
