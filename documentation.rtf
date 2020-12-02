@@ -1,0 +1,415 @@
+Project Development Process:
+Note: installation instructions as well as resources are cited in readme.md.
+1. Testing out a for each loop with CSV:
+
+    producer.py:
+        #!/usr/bin/env python
+        import csv
+
+        def send_leads(file_name):    
+            with open(file_name, newline='') as csvfile:
+                data = csv.DictReader(csvfile)
+                for row in data:
+                    print(row['registration_dttm'])
+
+
+        def main():
+            send_leads('leads.csv')
+            
+        if __name__=="__main__":
+            main()
+
+
+OUTPUT (Shortened):
+    2016-02-03T02:39:55Z
+    2016-02-03T03:55:45Z
+    2016-02-03T01:06:44Z
+    2016-02-03T02:08:01Z
+    2016-02-03T16:26:28Z
+    2016-02-03T13:36:49Z
+    2016-02-03T04:39:01Z
+    2016-02-03T00:33:54Z
+    2016-02-03T00:15:08Z
+    2016-02-03T00:53:53Z
+
+2. Sending Entire CSV Row to Pika Consumer with for-each loop:
+
+producer.py:
+
+    #!/usr/bin/env python
+    import pika
+    import json
+    import csv
+
+    def send_leads(file_name):
+        connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+        channel = connection.channel()
+        channel.queue_declare(queue='leads_pipe')
+
+        with open(file_name, newline='') as csvfile:
+            data = csv.DictReader(csvfile)
+            for row in data:
+                lead = {'registration_dttm': row['registration_dttm'], 'id': row['id'],'first_name': row['first_name'], 
+                        'last_name': row['last_name'], 'email': row['email'], 'gender': row['gender'], 
+                        'ip_address': row['ip_address'], 'cc': row['cc'], 'country': row['country'], 
+                        'birthdate': row['birthdate'], 'salary': row['salary'], 'title': row['title'], 'comments': row['comments']
+                        }
+                channel.basic_publish(exchange='', routing_key='leads_pipe', body=json.dumps(lead))
+
+            connection.close()
+
+    def main():
+        send_leads('leads.csv')
+        
+    if __name__=="__main__":
+        main()
+
+Consumer.py:
+
+    #!/usr/bin/env python
+    import pika, sys, os, json
+
+    def main():
+        connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
+        channel = connection.channel()
+
+        channel.queue_declare(queue='leads_pipe')
+
+        def callback(ch, method, properties, body):
+            message = json.loads(body))
+            print(" [x] Received %r" % json.loads(body))
+
+        channel.basic_consume(queue='leads_pipe', on_message_callback=callback, auto_ack=True)
+
+        print(' [*] Waiting for messages. To exit press CTRL+C')
+        channel.start_consuming()
+
+    if __name__ == '__main__':
+        try:
+            main()
+        except KeyboardInterrupt:
+            print('Interrupted')
+            try:
+                sys.exit(0)
+            except SystemExit:
+                os._exit(0)
+
+OUTPUT (Shortened):
+ [x] Received {'registration_dttm': '2016-02-03T00:33:54Z', 'id': '998', 'first_name': 'Stephanie', 'last_name': 'Sims', 'email': 'ssimsrp@newyorker.com', 'gender': 'Female', 'ip_address': '135.66.68.181', 'cc': '3548125808139842', 'country': 'Poland', 'birthdate': '', 'salary': '112275.78', 'title': '', 'comments': ''}
+ [x] Received {'registration_dttm': '2016-02-03T00:15:08Z', 'id': '999', 'first_name': 'Marie', 'last_name': 'Medina', 'email': 'mmedinarq@thetimes.co.uk', 'gender': 'Female', 'ip_address': '223.83.175.211', 'cc': '', 'country': 'Kazakhstan', 'birthdate': '3/25/1969', 'salary': '53564.76', 'title': 'Speech Pathologist', 'comments': ''}
+ [x] Received {'registration_dttm': '2016-02-03T00:53:53Z', 'id': '1000', 'first_name': 'Alice', 'last_name': 'Peterson', 'email': 'apetersonrr@parallels.com', 'gender': 'Female', 'ip_address': '244.89.94.58', 'cc': '5602227843485236', 'country': 'Nigeria', 'birthdate': '', 'salary': '239858.7', 'title': '', 'comments': ''}
+
+3. Consumer Sorting Column Value of Message Recieved:
+
+Consumer.py:
+    #!/usr/bin/env python
+    import pika, sys, os, json
+
+    def main():
+        connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
+        channel = connection.channel()
+
+        channel.queue_declare(queue='leads_pipe')
+
+        def callback(ch, method, properties, body):
+            message = json.loads(body)
+            psql_insert(message)
+
+        channel.basic_consume(queue='leads_pipe', on_message_callback=callback, auto_ack=True)
+
+        print(' [*] Waiting for messages. To exit press CTRL+C')
+        channel.start_consuming()
+
+    def psql_insert(message):
+        if message['country'] == 'United States':
+            print(" [x] Received US %r" % message['last_name'], message['country'])
+        elif message['cc'] != '':
+        print(" [x] Received OPT 2 %r" % message['last_name'], message['cc'])
+        else:
+            print(" [x] Received NO CC %r" % message['last_name'], message['cc'])
+        
+
+    if __name__ == '__main__':
+        try:
+            main()
+        except KeyboardInterrupt:
+            print('Interrupted')
+            try:
+                sys.exit(0)
+            except SystemExit:
+                os._exit(0)
+
+OUTPUT(Shortened):
+    [x] Received US 'Robinson' United States
+    [x] Received OPT 2 'Thomas' 4405271466026325
+    [x] Received NO CC 'Anderson' 
+    [x] Received NO CC 'Hayes' 
+    [x] Received OPT 2 'Butler' 3543989857454146
+    [x] Received NO CC 'Rivera' 
+    [x] Received NO CC 'Warren' 
+    [x] Received NO CC 'Fields' 
+    [x] Received OPT 2 'Sims' 3548125808139842
+    [x] Received NO CC 'Medina' 
+    [x] Received OPT 2 'Peterson' 5602227843485236
+
+3. Using Psycopg2 to populate DB:
+
+    consumer.py (checking message data to determine which table to insert into):
+        from db_connect import connect
+        ....
+        ....
+        if message['country'] == 'United States': #if country is US
+            connect(message, 'leads')
+        elif message['cc'] != '': #if no cc number
+        connect(message, 'high_priority')
+
+    database.ini (stores config for psql):
+        [postgresql]
+        database=project851
+        user=postgres
+
+    config.py: configures psycopg2 with database.ini data:
+        #!/usr/bin/python
+        from configparser import ConfigParser
+
+
+        def config(filename='database.ini', section='postgresql'):
+            # create a parser
+            parser = ConfigParser()
+            # read config file
+            parser.read(filename)
+
+            # get section, default to postgresql
+            db = {}
+            if parser.has_section(section):
+                params = parser.items(section)
+                for param in params:
+                    db[param[0]] = param[1]
+            else:
+                raise Exception('Section {0} not found in the {1} file'.format(section, filename))
+
+            return db
+
+
+    init_db.py (Used for creating db tables and dropping if exist): 
+        #!/usr/bin/python
+        import psycopg2
+        from config import config
+
+        def connect():
+            """ Connect to the PostgreSQL database server """
+            conn = None
+            try:
+                # read connection parameters
+                params = config()
+
+                # connect to the PostgreSQL server
+                print('Connecting to the PostgreSQL database...')
+                conn = psycopg2.connect(**params)
+                
+                # create a cursor
+                cur = conn.cursor()
+            # execute a statement
+                cur.execute("""DROP TABLE leads""")
+                cur.execute("""DROP TABLE high_priority""")
+                cur.execute("""
+                CREATE TABLE IF NOT EXISTS leads (
+                    registration_dttm timestamp NOT NULL,
+                    id INTEGER PRIMARY KEY NOT NULL,
+                    first_name VARCHAR(255),
+                    last_name VARCHAR(255),
+                    email VARCHAR(255),
+                    gender VARCHAR(255),
+                    ip_address VARCHAR(255),
+                    cc BIGINT,
+                    country VARCHAR(255),
+                    birthdate DATE,
+                    salary NUMERIC,
+                    title VARCHAR(255),
+                    comments VARCHAR(255)
+                )
+                """)
+                cur.execute("""
+                CREATE TABLE IF NOT EXISTS high_priority (
+                    registration_dttm timestamp NOT NULL,
+                    id INTEGER PRIMARY KEY NOT NULL,
+                    first_name VARCHAR(255),
+                    last_name VARCHAR(255),
+                    email VARCHAR(255),
+                    gender VARCHAR(255),
+                    ip_address VARCHAR(255),
+                    cc BIGINT,
+                    country VARCHAR(255),
+                    birthdate DATE,
+                    salary NUMERIC,
+                    title VARCHAR(255),
+                    comments VARCHAR(255)
+                )
+                """)
+            
+            # close the communication with the PostgreSQL
+                conn.commit()
+                cur.close()
+            except (Exception, psycopg2.DatabaseError) as error:
+                print(error)
+            finally:
+                if conn is not None:
+                    conn.close()
+                    print('Database connection closed.')
+
+
+        def main():
+            connect()
+
+        if __name__ == '__main__':
+            connect()
+
+
+    db_connect.py (inserting data into one of two tables. Takes message and table parameter):
+        #!/usr/bin/python
+        import psycopg2
+        from config import config
+
+        def connect(message, table):
+            """ Connect to the PostgreSQL database server """
+            conn = None
+            try:
+                # read connection parameters
+                params = config()
+
+                # connect to the PostgreSQL server
+                print('Connecting to the PostgreSQL database...')
+                conn = psycopg2.connect(**params)
+                
+                for item in message:  
+                    if message[item] == "":
+                        message[item] = None
+                # create a cursor
+                cur = conn.cursor()
+                #print('inserting message' + str(message))
+            # execute a statement
+                if table == 'leads': 
+                    cur.execute("""
+                    INSERT INTO leads (registration_dttm,id,first_name,last_name,email,gender,ip_address,cc,country,birthdate,salary,title,comments)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)    
+                    """,
+                    (message['registration_dttm'],message['id']
+                    ,message['first_name'],message['last_name']
+                    ,message['email'],message['gender']
+                    ,message['ip_address'],message['cc']
+                    ,message['country'],message['birthdate']
+                    ,message['salary'],message['title']
+                    ,message['comments']))
+                elif table == 'high_priority':
+                    cur.execute("""
+                    INSERT INTO high_priority (registration_dttm,id,first_name,last_name,email,gender,ip_address,cc,country,birthdate,salary,title,comments)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)    
+                    """,
+                    (message['registration_dttm'],message['id']
+                    ,message['first_name'],message['last_name']
+                    ,message['email'],message['gender']
+                    ,message['ip_address'],message['cc']
+                    ,message['country'],message['birthdate']
+                    ,message['salary'],message['title']
+                    ,message['comments']))
+            
+            # close the communication with the PostgreSQL
+                conn.commit()
+                cur.close()
+            except (Exception, psycopg2.DatabaseError) as error:
+                print(error)
+            finally:
+                if conn is not None:
+                    conn.close()
+                    print('Database connection closed.')
+
+
+        def main():
+            connect()
+
+        if __name__ == '__main__':
+            connect()
+
+    OUTPUT: 
+        consumer.py after producer.py is run (Shortened):
+            
+            Connecting to the PostgreSQL database...
+            Database connection closed.
+            Connecting to the PostgreSQL database...
+            Database connection closed.
+            Connecting to the PostgreSQL database...
+            Database connection closed.
+            Connecting to the PostgreSQL database...
+            Database connection closed.
+            Connecting to the PostgreSQL database...
+            Database connection closed.
+            Connecting to the PostgreSQL database...
+            Database connection closed.
+    
+
+        psql leads table(23 rows): 
+            2016-02-03 04:03:25 | 748 | Virginia   | Tucker    | vtuckerkr@ameblo.jp       | Female | 216.124.158.80  |                     | United States | 1988-01-11 | 204624.68 | Research Nurse              | 
+            2016-02-03 01:50:38 | 880 | Joshua     | Garrett   | jgarrettof@bloomberg.com  | Male   | 194.125.181.100 |    4026241713136630 | United States |            | 104744.79 |                             | -1E2
+            2016-02-03 02:04:46 | 914 | Adam       | Mendoza   | amendozapd@ucla.edu       | Male   | 219.64.96.213   |    3535101196800233 | United States | 1968-07-17 |  80552.84 | Assistant Manager           | 
+            2016-02-03 01:02:30 | 944 | Kelly      | Hanson    | khansonq7@phpbb.com       |        | 250.78.86.48    |                     | United States | 1969-01-02 |           | Account Executive           | 
+            2016-02-03 03:17:13 | 969 | Terry      | Robinson  | trobinsonqw@amazon.com    | Male   | 242.98.189.30   |  491129692288238190 | United States | 1969-09-13 | 264976.12 | Information Systems Manager | 
+
+        psql high_priority table (650 rows):
+            2016-02-03 21:58:10 |   16 | Kenneth     | Gibson     | kgibsonf@soundcloud.com            | Male   | 91.153.142.170  |    5389947292571488 | Peru                             | 1975-11-03 |  98614.53 | Environmental Tech                   | 
+            2016-02-03 23:20:49 |   18 | Kelly       | Fowler     | kfowlerh@dell.com                  | Female | 147.58.88.116   |    3551741291105936 | Greece                           | 1975-06-11 | 117249.56 | Systems Administrator III            | 
+            2016-02-03 18:28:46 |   19 | Diana       | Howell     | dhowelli@sphinn.com                | Female | 21.240.75.42    |    4026635872860296 | Iran                             | 1993-07-07 | 174844.52 | Teacher                              | 
+            2016-02-03 02:23:26 |   20 | Johnny      | Collins    | jcollinsj@google.ca                | Male   | 38.173.129.250  |     372301677387203 | Afghanistan                      | 1987-07-28 | 155908.69 | Social Worker                        | 
+
+4. Outputting remaining data to CSV:
+        def psql_insert(message):
+        
+        #column headers for CSV file
+        csv_columns = ['registration_dttm', 'id', 'first_name', 
+                    'last_name', 'email','gender', 'ip_address', 
+                    'cc', 'country', 'birthdate', 'salary', 'title', 
+                    'comments'] #columns for csv_dump
+        ....
+        ....
+        elif message['cc'] != '': #if no cc number
+        connect(message, 'high_priority')
+        else: #if not contained in US, and has CC number, dump to CSV:
+            try:
+                file_exists = os.path.isfile('leads_dump.csv') #check if file already exists
+                with open('leads_dump.csv', 'a') as csvfile: #open file for dumping rest of leads
+                    writer = csv.DictWriter(csvfile, fieldnames=csv_columns)
+                    if not file_exists:
+                        writer.writeheader()  # file doesn't exist yet, write a header
+                    writer.writerow(message)  # append each message to file as a new row
+            except IOError:
+                print("I/O error")
+
+        OUTPUT (325 rows):
+            2016-02-03T13:36:49Z,996,Carol,Warren,cwarrenrn@geocities.jp,Female,71.7.191.213,,China,,185421.82,,",。・:*:・゜’( ☻ ω ☻ )。・:*:・゜’"
+            2016-02-03T04:39:01Z,997,Helen,Fields,hfieldsro@comcast.net,Female,164.190.97.183,,Malaysia,,279671.68,,
+            2016-02-03T00:15:08Z,999,Marie,Medina,mmedinarq@thetimes.co.uk,Female,223.83.175.211,,Kazakhstan,3/25/1969,53564.76,Speech Pathologist,
+
+5. Moving leads CSV to S3:
+    aws s3 cp ./leads.csv s3://comp851-m1-f20/aat1006/project_leads/leads.csv
+
+6. Adjusting code to import CSV from S3 Bucket Using Boto3:
+
+    producer.py:
+    import pika, json, csv, sys, boto3, codecs
+
+    def send_leads(file_name):
+        #initiate localhost connection with pika.
+        connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+        channel = connection.channel()
+        #declare queue named "leads_pipe"
+        channel.queue_declare(queue='leads_pipe')
+
+        #retrieve leads file from s3 bucket with file parameter
+        s3 = boto3.client('s3')
+        data = s3.get_object(Bucket='comp851-m1-f20', Key=file_name)
+
+        for row in csv.DictReader(codecs.getreader("utf-8")(data["Body"])):
+        ....
+        ....
+
+    New method of calling producer.py with file argument:
+    $ python3 producer.py aat1006/project_leads/leads.csv
