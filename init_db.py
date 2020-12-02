@@ -15,7 +15,8 @@ def connect():
 		
         # create a cursor
         cur = conn.cursor()
-	# execute a statement
+
+        #drop existing tables ane make new ones.
         cur.execute("""DROP TABLE leads""")
         cur.execute("""DROP TABLE high_priority""")
         cur.execute("""
@@ -53,7 +54,7 @@ def connect():
         )
         """)
        
-	# close the communication with the PostgreSQL
+	    # close the communication with the PostgreSQL
         conn.commit()
         cur.close()
     except (Exception, psycopg2.DatabaseError) as error:
@@ -62,7 +63,6 @@ def connect():
         if conn is not None:
             conn.close()
             print('Database connection closed.')
-
 
 def main():
     connect()
