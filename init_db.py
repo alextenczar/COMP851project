@@ -17,8 +17,8 @@ def connect():
         cur = conn.cursor()
 
         #drop existing tables ane make new ones.
-        cur.execute("""DROP TABLE  IF EXISTS leads""")
-        cur.execute("""DROP TABLE  IF EXISTS high_priority""")
+        cur.execute("""DROP TABLE IF EXISTS leads""")
+        cur.execute("""DROP TABLE IF EXISTS high_priority""")
         cur.execute("""
         CREATE TABLE IF NOT EXISTS leads (
             registration_dttm timestamp NOT NULL,
