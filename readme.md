@@ -77,8 +77,8 @@ Setting up PSQL:\
 https://www.postgresqltutorial.com/install-postgresql-linux/ \
 Inserting Python Variables into PSQL with Psycopg2:\
 https://stackoverflow.com/questions/62764057/how-to-insert-variable-data-into-postgresql \
-Dropping PSQL Tables with Psycopg2:
-https://stackoverflow.com/questions/435424/postgresql-how-to-create-table-only-if-it-does-not-already-exist
+Dropping PSQL Tables with Psycopg2: \
+https://stackoverflow.com/questions/435424/postgresql-how-to-create-table-only-if-it-does-not-already-exist \
 Reading CSV File from S3 Bucket:\
 https://dev.to/shihanng/how-to-read-csv-file-from-amazon-s3-in-python-4ee9 \
 Creating CSV Dump:\
