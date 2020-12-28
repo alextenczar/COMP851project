@@ -34,11 +34,7 @@ Psycopg2 function along with the desired table name in order to insert the data.
 6. Run init_db.py to create your database tables or reset data:\
   ```$ python3 init_db.py```
 7. Add the csv file to your S3 bucket:\
-<<<<<<< HEAD
   ```aws s3 cp ./leads.csv s3://""/""/project_leads/leads.csv ```
-=======
-  ```$ aws s3 cp ./leads.csv s3://comp851-m1-f20/aat1006/project_leads/leads.csv ```
->>>>>>> c9b744c8d3304b49917390091c0b4c1404dd7f2d
 8. Adjust the S3 bucket name in producer.py:\
   ```data = s3.get_object(Bucket='', Key=file_name)```
 9. Start the consumer:\
