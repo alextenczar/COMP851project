@@ -34,13 +34,13 @@ Psycopg2 function along with the desired table name in order to insert the data.
 6. Run init_db.py to create your database tables or reset data:\
   ```$ python3 init_db.py```
 7. Add the csv file to your S3 bucket:\
-  ```aws s3 cp ./leads.csv s3://comp851-m1-f20/aat1006/project_leads/leads.csv ```
+  ```aws s3 cp ./leads.csv s3://""/""/project_leads/leads.csv ```
 8. Adjust the S3 bucket name in producer.py:\
-  ```data = s3.get_object(Bucket='comp851-m1-f20', Key=file_name)```
+  ```data = s3.get_object(Bucket='', Key=file_name)```
 9. Start the consumer:\
   ``` $ python3 consumer.py ```
 10. Run the producer with your S3's csv as an argument:\
-  ```  $ python3 producer.py aat1006/project_leads/leads.csv```
+  ```  $ python3 producer.py ""/project_leads/leads.csv```
 11. Your database's two tables should now be populated with leads and a leads_dump.csv should reside in the directory:\
   ```
 project851=# select * from leads;

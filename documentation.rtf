@@ -389,7 +389,7 @@ OUTPUT(Shortened):
             2016-02-03T00:15:08Z,999,Marie,Medina,mmedinarq@thetimes.co.uk,Female,223.83.175.211,,Kazakhstan,3/25/1969,53564.76,Speech Pathologist,
 
 5. Moving leads CSV to S3:
-    aws s3 cp ./leads.csv s3://comp851-m1-f20/aat1006/project_leads/leads.csv
+    aws s3 cp ./leads.csv s3:/""/""/project_leads/leads.csv
 
 6. Adjusting code to import CSV from S3 Bucket Using Boto3:
 
@@ -405,11 +405,11 @@ OUTPUT(Shortened):
 
         #retrieve leads file from s3 bucket with file parameter
         s3 = boto3.client('s3')
-        data = s3.get_object(Bucket='comp851-m1-f20', Key=file_name)
+        data = s3.get_object(Bucket="", Key=file_name)
 
         for row in csv.DictReader(codecs.getreader("utf-8")(data["Body"])):
         ....
         ....
 
     New method of calling producer.py with file argument:
-    $ python3 producer.py aat1006/project_leads/leads.csv
+    $ python3 producer.py username/project_leads/leads.csv

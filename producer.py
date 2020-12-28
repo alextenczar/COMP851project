@@ -10,7 +10,7 @@ def send_leads(file_name):
 
     #retrieve leads file from s3 bucket with file parameter
     s3 = boto3.client('s3')
-    data = s3.get_object(Bucket='comp851-m1-f20', Key=file_name)
+    data = s3.get_object(Bucket='', Key=file_name)
 
     for row in csv.DictReader(codecs.getreader("utf-8")(data["Body"])):
         #create message dictionary and link with csv colums
