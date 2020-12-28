@@ -42,7 +42,7 @@ Psycopg2 function along with the desired table name in order to insert the data.
 10. Run the producer with your S3's csv as an argument:\
   ```  $ python3 producer.py ""/project_leads/leads.csv```
 11. Your database's two tables should now be populated with leads and a leads_dump.csv should reside in the directory:\
-  ```  $ python3 producer.py aat1006/project_leads/leads.csv```
+  ```  $ python3 producer.py ""/project_leads/leads.csv```
 11. Your database's two tables should now be populated with leads and a leads_dump.csv should reside in the directory:
   ```
 project851=# select * from leads;
